@@ -22,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     OtpPageFunction().getCurrentPosition();
-   // LoginFunction().getCountry();
+    // LoginFunction().getCountry();
     super.initState();
   }
 
@@ -98,8 +98,8 @@ class _LoginPageState extends State<LoginPage> {
     var isError = FormValidator()
         .validateMobileNumber(val: LoginFunction().mobileNumber.text);
     if (isError == null) {
-      LoginFunction()
-          .validateCountryCode(mobile: LoginFunction().mobileNumber.text);
+      LoginFunction().validateCountryCode(
+          mobile: LoginFunction().mobileNumber.text, isRegFlow: false);
     } else {
       ToastMessage().showToast(content: isError);
     }

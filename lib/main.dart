@@ -9,6 +9,7 @@ import 'package:swinpay/global/app_util.dart';
 import 'package:swinpay/view/screens/splash_screen.dart';
 import 'functions/firebase_messaging.dart';
 import 'global/app_theme.dart';
+
 //import 'package:firebase_app_check/firebase_app_check.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   AppUtil.printData('i am from main', isError: true);
@@ -27,10 +28,8 @@ void main() async {
       .load('assets/start_swinkpay_fintech_com_2024.crt');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]);
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   runApp(const MyApp());
 }

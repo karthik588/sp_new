@@ -43,9 +43,6 @@ class _DashBoardPageState extends State<DashBoardPage> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (AppUtil.isMerchantUser) {
-        _topAction(_topActions()[0]);
-      }
       DashboardFunction().selectedFilterValInDashboard.clear();
       _init();
       DashboardFunction().scrollController.addListener(() {
@@ -60,13 +57,6 @@ class _DashBoardPageState extends State<DashBoardPage> {
       await DashboardFunction().getQRCodeInfo();
     }
     await DashboardFunction().onRefresh();
-  }
-
-  void _onTapTopAction(BottomBarModel action) {
-    if (action.onTap != null) {
-      action.onTap!();
-    }
-    _topAction(action);
   }
 
   Future<void> _scrollListner() async {
@@ -130,24 +120,6 @@ class _DashBoardPageState extends State<DashBoardPage> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final Rx<BottomBarModel> _topAction = BottomBarModel().obs;
-
-  _topActions() => [
-        BottomBarModel(
-            icon: Icons.qr_code_scanner, onTap: () {}, text: AppString().sales),
-        BottomBarModel(
-            icon: Icons.credit_card_rounded,
-            onTap: () {},
-            body: _bodyTable(),
-            text: AppString().settlements),
-        BottomBarModel(
-            icon: Icons.add_circle,
-            onTap: () {},
-            body: _graph(),
-            text: AppString().liveStatus,
-            hideDuration: true),
-      ];
-
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -192,55 +164,22 @@ class _DashBoardPageState extends State<DashBoardPage> {
             )));
   }
 
-  Widget _header() => Column(
+  Widget _header() => Row(
         children: [
-          Row(
-            children: [
-              Expanded(child: _profile()),
-              InkWell(
-                onTap: () => Get.to(const NotificationScreen()),
-                child: Icon(
-                  Icons.notifications_none,
-                  size: 30,
-                  color: AppColors.onBg,
-                ),
-              ),
-              // const SizedBox(width: 23\),
-              // Buttons().raisedButton(
-              //     buttonText: AppString().punchOut,
-              //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              //     onTap: () => CheckOutPrompt().show()),
-            ],
-          ),
-          Obx(
-            () => Visibility(
-              visible: AppUtil.isMerchantUser,
-              child: Row(
-                  children: List.generate(
-                      _topActions().length,
-                      (index) => Expanded(
-                          child: _topActions()[index].text ==
-                                  _topAction.value.text
-                              ? Buttons().raisedButton(
-                                  padding: const EdgeInsets.all(0),
-                                  textStyle: TextStyle(
-                                      color: AppColors.onPrimary,
-                                      fontWeight: FontWeight.w400),
-                                  radius: 80,
-                                  buttonText: _topActions()[index].text,
-                                  onTap: () =>
-                                      _onTapTopAction(_topActions()[index]))
-                              : TextButton(
-                                  onPressed: () =>
-                                      _onTapTopAction(_topActions()[index]),
-                                  child: Text(
-                                    _topActions()[index].text ?? '',
-                                    style: TextStyle(
-                                        color: AppColors.onBg.withOpacity(0.5),
-                                        fontWeight: FontWeight.w300),
-                                  ))))),
+          Expanded(child: _profile()),
+          InkWell(
+            onTap: () => Get.to(const NotificationScreen()),
+            child: Icon(
+              Icons.notifications_none,
+              size: 30,
+              color: AppColors.onBg,
             ),
-          )
+          ),
+          // const SizedBox(width: 23\),
+          // Buttons().raisedButton(
+          //     buttonText: AppString().punchOut,
+          //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          //     onTap: () => CheckOutPrompt().show()),
         ],
       );
 
@@ -345,9 +284,6 @@ class _DashBoardPageState extends State<DashBoardPage> {
                       !DashboardFunction().isinitLoading.value
                   ? Center(child: Text(AppString().noSales))
                   : _bodyTable()),
-          Obx(() => Visibility(
-              visible: AppUtil.isMerchantUser,
-              child: Expanded(child: _topAction.value.body ?? Container()))),
         ],
       )));
 

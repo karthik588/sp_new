@@ -31,7 +31,7 @@ class AppString {
   final String resendOtp = "RESEND OTP";
   final String otpValText = "Please enter OTP";
   final String verify = "Verify";
-  final String mpinText = 'Add a MPIN code to secure your\naccount';
+  final String mpinText = 'Enter MPIN';
   final String changeMpinText = 'Enter your current MPIN code';
   final String cnfrmMpin = 'Confirm your MPIN code.\nEnter code again';
   final String punchIn = 'Punch In';
@@ -103,6 +103,10 @@ class AppString {
   final String noSales = 'No Sales';
   final String somethingWentWrongPlzTryAgain =
       'SomeThing went wrong. Please try again.';
+  final String registrationSuccessMsg =
+      'Your new mobile number is successfully updated.';
+  final String go = 'Go';
+  final String done = 'Done';
 
   static String getStatus({required dynamic status}) {
     try {

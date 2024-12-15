@@ -11,6 +11,7 @@ import '../../api_modules/api_services.dart';
 import '../../global/app_util.dart';
 import '../../models/backend/loginResponseModel.dart';
 import '../../view/screens/dashboard/dashboard_page2.dart';
+import '../../view/screens/general/registartion_success_page.dart';
 import '../../view/widgets/loadingPrompt.dart';
 import '../../view/widgets/toastMessage.dart';
 import '../sslEncryptionFunction.dart';
@@ -217,7 +218,9 @@ class OtpPageFunction {
           .updatePushToken(devicePushToken: AppUtil.fcmToken);
       if (response != null) {
         if (response.status == 0) {
-          Get.offAll(const DashBoardPage());
+          AppUtil.isMerchantUser
+              ? Get.offAll(const DashBoardPage2())
+              : Get.offAll(const DashBoardPage());
         }
       } else {
         Navigator.pop(Get.context!);
@@ -313,7 +316,7 @@ class OtpPageFunction {
       if (response != null) {
         if (response.status == 0) {
           MpinPageFunction().mpin.clear();
-          Get.off(const MpinPage(isLoginFlow: true));
+          Get.off(const RegistrationSuccessPage());
         }
       } else {
         Navigator.pop(Get.context!);

@@ -49,12 +49,13 @@ class LoginFunction {
     }
   }
 
-  Future<void> validateCountryCode({required String mobile}) async {
+  Future<void> validateCountryCode(
+      {required String mobile, required bool isRegFlow}) async {
     try {
       LoadingPrompt().show();
       final response = await ApiServices().validateCountryCode();
       if (response != null && response.status == 0) {
-        await _getInstitutionForMobile(mobile: mobile);
+        await _getInstitutionForMobile(mobile: mobile, isRegFlow: isRegFlow);
       } else {
         Navigator.pop(Get.context!);
       }
@@ -67,15 +68,23 @@ class LoginFunction {
     }
   }
 
-  Future<void> _getInstitutionForMobile({required String mobile}) async {
+  Future<void> _getInstitutionForMobile({
+    required String mobile,
+    required bool isRegFlow,
+  }) async {
     try {
-      //UAT
+      // UAT
       final response = await ApiServices()
           .getInstitutionForMobile(institutionId: 1, mobile: mobile);
-      //Production
-      //final response = await ApiServices().getInstitutionForMobile(institutionId: 10, mobile: mobile);
+
+      // Production
+      // final response = await ApiServices().getInstitutionForMobile(institutionId: 10, mobile: mobile);
       if (response != null && response.status == 0) {
-        _checkAllPermission(mobile: mobile);
+        if (isRegFlow) {
+          _validateMerchantMobileAndDevice();
+        } else {
+          _checkAllPermission(mobile: mobile);
+        }
       } else {
         Navigator.pop(Get.context!);
       }
@@ -88,6 +97,7 @@ class LoginFunction {
   Future<void> _checkAllPermission({required String mobile}) async {
     var isGranted = await _requestPermission();
     if (isGranted) {
+      AppUtil.printData('I am check all permission');
       await ApiServices().resetDio();
       await _fetchUserDetails(mobile: mobile);
     } else {
@@ -132,11 +142,12 @@ class LoginFunction {
         AppUtil.printData(' i am userdata', isError: true);
 
         if (user.value.userType.toString() == '4') {
+          // await ApiServices().resetDio();
           AppUtil.isMerchantUser = true;
           await _merchantFlow(data: response.data!);
         } else if (user.value.userType.toString() == '7') {
           AppUtil.isMerchantUser = false;
-          await _fetchSecretKey(isFreshLogin: true);
+          await fetchSecretKey(isFreshLogin: true);
         }
       } else if (response != null && response.errorData!.errorCode == -105) {
         Navigator.pop(Get.context!);
@@ -162,7 +173,7 @@ class LoginFunction {
     //Get.to(const MpinPage());
   }
 
-  Future<void> _fetchSecretKey({required bool isFreshLogin}) async {
+  Future<void> fetchSecretKey({required bool isFreshLogin}) async {
     try {
       final response = await ApiServices().getSecretKey();
       if (response != null && response.status == 0) {
@@ -219,7 +230,12 @@ class LoginFunction {
 
     if (userType.toString() == '4') {
       AppUtil.isMerchantUser = true;
-      Get.to(const MpinPage(isLoginFlow: true));
+      await ApiServices().resetDio();
+      LoginFunction().fetchSecretKey(isFreshLogin: false);
+      Get.to(const MpinPage(
+        isLoginFlow: true,
+        isChangeMpin: false,
+      ));
     } else {
       if (loginToken != null) {
         await alreadyLoginFlow();
@@ -236,7 +252,7 @@ class LoginFunction {
     var userData = LocalDB().getUserData();
     LoadingPrompt().show();
     await ApiServices().resetDio();
-    await _fetchSecretKey(isFreshLogin: false).then((value) async {
+    await fetchSecretKey(isFreshLogin: false).then((value) async {
       if (userData?.defaultMpin == false) {
         OtpPageFunction().biometric();
       }
@@ -255,11 +271,14 @@ class LoginFunction {
         merchantDetails(response);
         if (merchantDetails.value.data!.isMobileExist == true &&
             merchantDetails.value.data!.isDeviceExist == false) {
-          Get.to(const MpinPage());
-          _fetchSecretKey(isFreshLogin: false);
+          Get.to(const MpinPage(
+            isChangeMpin: false,
+          ));
+          fetchSecretKey(isFreshLogin: false);
         } else if (merchantDetails.value.data!.isMobileExist == true &&
             merchantDetails.value.data!.isDeviceExist == true) {
           Get.to(const MpinPage(
+            isChangeMpin: false,
             isLoginFlow: true,
           ));
         }

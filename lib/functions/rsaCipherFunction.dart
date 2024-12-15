@@ -26,6 +26,7 @@ class RSACipher {
   }
 
   String encryptUsingPublicKey(String text) {
+    print('111111111111');
     AppUtil.printData(encrypt(text, publickey), isError: true);
     return encrypt(text, publickey);
   }

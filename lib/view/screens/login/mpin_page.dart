@@ -88,7 +88,7 @@ class _MpinPageState extends State<MpinPage> {
                 Icon(
                   Icons.lock_open_outlined,
                   color: AppColors.primary,
-                  size: 40,
+                  size: 50,
                 ),
                 const SizedBox(height: 15),
                 Text(
