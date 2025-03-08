@@ -546,7 +546,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                         ),
                         children: [
                           const Divider(color: Colors.grey,height: 0.3,),
-                          SizedBox(height: 5,),
+                          const SizedBox(height: 5,),
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -569,7 +569,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                         .spaceBetween,
                                     children: [
                                       Expanded(
-                                        flex: 3,
+                                        flex:3,
                                         child: Text(
                                           CommonFunctions().formatTime(
                                               transaction.date!),
@@ -579,7 +579,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 2,
+                                        flex: 4,
                                         child: Text(
                                           '${AppUtil.currency}${CommonFunctions()
                                               .convertToDouble(
