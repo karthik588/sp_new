@@ -377,17 +377,17 @@ class DashboardFunction {
   }
 
   Future<FilterData?> filterSales(
-      {String? selectedStatus = '1',
+      {String? selectedStatus = '',
         bool isDownload = false,
         String? fromDate = '',
         String? historyType = '1',
-        int recordsPerPage = 15,
+        int recordsPerPage = -1,
         String? toDate = '',
         int pageNo = 0,
         bool showLoader = true}) async {
     try {
-      //selectedStatus
-      //0:processing 1: success 2: failed
+      isinitLoading(true);
+      merchantTransactionList.clear();
       showLoader ? LoadingPrompt().show() : null;
       final response = await ApiServices().filterTransactionHistory(
           toDate: toDate ?? '',
@@ -403,35 +403,14 @@ class DashboardFunction {
           terminalID: '0');
 
       if (response != null && response.status == 0) {
-        if (isDownload) {
-          return response.data;
-        } else {
-          if (tempHistoryType != historyType ||
-              tempsSelectedStatus != selectedStatus ||
-              tempFromDate != fromDate ||
-              tempToDate != toDate) {
-            AppUtil.printData('data cleared ', isError: true);
-            pageNumber = 0;
-            salesData(FilterData());
-            merchantTransactionList.clear();
-          }
-          salesData(response.data);
-          var transactionSet = merchantTransactionList.value.toSet();
-
-          for (var transaction in response.data!.transactionsubList!) {
-            transactionSet.add(transaction);
-          }
-          merchantTransactionList.value = transactionSet.toList();
-          tempHistoryType = historyType ?? '0';
-          tempsSelectedStatus = selectedStatus ?? '1';
-          tempToDate = toDate;
-          tempFromDate = fromDate;
-        }
+        salesData(response.data);
+        merchantTransactionList(response.data!.transactionsubList!);
       }
     } on DioException catch (_) {
       AppUtil.printData('error: $_', isError: true);
     } finally {
       salesData.refresh();
+      isinitLoading(false);
       showLoader ? Navigator.pop(Get.context!) : null;
     }
     return null;

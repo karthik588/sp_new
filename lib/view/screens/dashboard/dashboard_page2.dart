@@ -28,10 +28,11 @@ class DashBoardPage2 extends StatefulWidget {
 }
 
 class _DashBoardPage2State extends State<DashBoardPage2> {
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+  GlobalKey<RefreshIndicatorState>();
   final Rx<BottomBarModel> _topAction = BottomBarModel().obs;
   RxList<String> selectedFilterVal = <String>[].obs;
   Rx<BottomBarModel> selectedHistoryType = BottomBarModel().obs;
-  final scrollController = ScrollController();
   RxBool isLoading = false.obs;
   RxBool isLoadingSales = false.obs;
 
@@ -85,12 +86,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
             hideDuration: true),
       ];
 
-  final _tableHeader = [
-    TableModel(text: AppString().time, style: DashBoardPage2._headerStyle),
-    TableModel(text: AppString().amount, style: DashBoardPage2._headerStyle),
-    TableModel(text: AppString().paidBy, style: DashBoardPage2._headerStyle),
-    TableModel(text: AppString().status, style: DashBoardPage2._headerStyle),
-  ];
+
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -102,42 +98,10 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
       DashboardFunction().clearFields();
       DashboardFunction().getQRCodeInfo();
       selectedHistoryType(_allHistoryTypes()[0]);
-      scrollController.addListener(() {
-        _scrollListner();
-      });
       _fetchTransaction(pageno: 0, showLoader: true);
     });
   }
 
-  void _scrollListner() {
-    if (scrollController.position.pixels ==
-        scrollController.position.maxScrollExtent) {
-      if (DashboardFunction().salesData.value.txnCount > 15 &&
-          DashboardFunction().transactionList.length !=
-              DashboardFunction().salesData.value.txnCount) {
-        DashboardFunction().pageNumber = DashboardFunction().pageNumber + 1;
-        selectedHistoryType.value.value == '6'
-            ? callDateApi(
-          pageno: DashboardFunction().pageNumber,
-        )
-            : _fetchTransaction(
-            pageno: DashboardFunction().pageNumber,
-            showLoader: false,
-            isFromScroll: true);
-      }
-    }
-  }
-
-  void callDateApi({required int pageno}) {
-    DateTime startDate = DashboardFunction().fromDate;
-    DateTime endDate = DashboardFunction().endDate;
-    _fetchTransaction(
-        fromDate: startDate,
-        toDate: endDate,
-        pageno: pageno,
-        showLoader: false,
-        isFromScroll: true);
-  }
 
 
   List<BottomBarModel> _allHistoryTypes() =>
@@ -210,27 +174,38 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: SideDrawer(),
-      body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      _header(),
-                      const SizedBox(height: 15),
-                      Expanded(child: _body()),
-                      const SizedBox(height: 20),
-                    ],
+      body: RefreshIndicator(
+    key: _refreshIndicatorKey,
+    onRefresh: () async =>
+    await _fetchTransaction(),
+    child: GestureDetector(
+    onVerticalDragUpdate: (details) async {
+    if (details.primaryDelta! > 5) {
+    _refreshIndicatorKey.currentState?.show();
+    }
+    },
+        child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
+                        _header(),
+                        const SizedBox(height: 15),
+                        Expanded(child: _body()),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _bottomBar(),
-            ],
-          )),
-    );
+                _bottomBar(),
+              ],
+            )),
+      ),
+    ));
   }
 
   Widget _header() =>
@@ -422,11 +397,6 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                 if (history.value !=
                                     DashboardFunction().tempHistoryType) {
                                   selectedHistoryType(history);
-                                  scrollController.animateTo(
-                                    0.0,
-                                    duration: const Duration(milliseconds: 100),
-                                    curve: Curves.linear,
-                                  );
                                 }
                                 if (selectedHistoryType.value.value != '6' &&
                                     selectedHistoryType.value.value !=
@@ -493,7 +463,6 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
           Obx(() =>
               Expanded(
                 child: ListView.separated(
-                  controller: scrollController,
                   itemCount: DashboardFunction().merchantTransactionList.length,
                   itemBuilder: (context, index) {
                     final transactionSummary =
@@ -502,8 +471,8 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                     return Theme(
                       data: ThemeData().copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        tilePadding: const EdgeInsets.symmetric(horizontal: 10),  // Removes default padding
-                        backgroundColor: Colors.transparent,  // Removes background color
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 10),
+                        backgroundColor: Colors.transparent,
                         collapsedBackgroundColor: Colors.transparent,
                         iconColor: Colors.white,
                         collapsedIconColor: Colors.white,
@@ -571,7 +540,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                       Expanded(
                                         flex:3,
                                         child: Text(
-                                          CommonFunctions().formatTime(
+                                          CommonFunctions().dateFormatDMYHMSA(
                                               transaction.date!),
                                           style: _tableBodyStyle,
                                           maxLines: 1,
@@ -579,7 +548,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 4,
+                                        flex: 3,
                                         child: Text(
                                           '${AppUtil.currency}${CommonFunctions()
                                               .convertToDouble(
@@ -615,6 +584,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                                           textAlign: TextAlign.center,
                                         ),
                                       ),
+                                      const SizedBox(height: 10,),
                                     ],
                                   ),
                                 ),
@@ -626,7 +596,10 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                     );
                   },
                   separatorBuilder: (BuildContext context, int index) =>
-                  const Divider(),
+                   Padding(
+                     padding: const EdgeInsets.symmetric(horizontal: 2),
+                     child: Divider(height: 0.3, color: AppColors.bg,),
+                   ),
                 ),
               )),
         ],
@@ -642,6 +615,7 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
 
   final _tableRows =
   TextStyle(color: AppColors.onBg, fontWeight: FontWeight.bold,
+    fontSize: 12,
     overflow: TextOverflow.ellipsis,);
 
 
