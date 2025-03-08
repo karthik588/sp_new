@@ -86,6 +86,7 @@ class LoginFunction {
           _checkAllPermission(mobile: mobile);
         }
       } else {
+        ToastMessage().showToast(content: response!.errorData!.errorMessage!);
         Navigator.pop(Get.context!);
       }
     } on DioException catch (_) {
@@ -314,6 +315,7 @@ class LoginFunction {
           mobile: mobileNumber.text,
         ));
       } else {
+        MpinPageFunction().mpin.clear;
         ToastMessage().showToast(
           content: response!.errorData!.errorMessage,
         );

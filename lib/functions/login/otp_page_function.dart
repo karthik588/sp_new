@@ -188,11 +188,12 @@ class OtpPageFunction {
         }
         else if (response.errorData!.errorCode.toString() == '-121') {
           Navigator.pop(Get.context!);
+          MpinPageFunction().mpin.clear();
           Get.off(const LoginPage());
         } else {
           ToastMessage().showToast(content: response.errorData!.errorMessage!);
           Navigator.pop(Get.context!);
-          Get.off(const LoginPage());
+          MpinPageFunction().mpin.clear();
         }
 
       }
