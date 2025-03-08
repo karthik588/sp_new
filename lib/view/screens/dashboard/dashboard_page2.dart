@@ -32,8 +32,8 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
   RxList<String> selectedFilterVal = <String>[].obs;
   Rx<BottomBarModel> selectedHistoryType = BottomBarModel().obs;
   final scrollController = ScrollController();
-  RxBool isLoading=false.obs;
-  RxBool isLoadingSales=false.obs;
+  RxBool isLoading = false.obs;
+  RxBool isLoadingSales = false.obs;
 
   final _bottomData = [
     BottomBarModel(
@@ -66,7 +66,8 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
         text: AppString().more),
   ];
 
-  _topActions() => [
+  _topActions() =>
+      [
         BottomBarModel(
             icon: Icons.qr_code_scanner, onTap: () {},
             body: _body(),
@@ -106,8 +107,8 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
       });
       _fetchTransaction(pageno: 0, showLoader: true);
     });
-
   }
+
   void _scrollListner() {
     if (scrollController.position.pixels ==
         scrollController.position.maxScrollExtent) {
@@ -120,63 +121,68 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
           pageno: DashboardFunction().pageNumber,
         )
             : _fetchTransaction(
-            pageno: DashboardFunction().pageNumber, showLoader: false,isFromScroll: true);
-
+            pageno: DashboardFunction().pageNumber,
+            showLoader: false,
+            isFromScroll: true);
       }
     }
   }
+
   void callDateApi({required int pageno}) {
     DateTime startDate = DashboardFunction().fromDate;
     DateTime endDate = DashboardFunction().endDate;
     _fetchTransaction(
-        fromDate: startDate, toDate: endDate, pageno: pageno, showLoader: false,isFromScroll: true);
+        fromDate: startDate,
+        toDate: endDate,
+        pageno: pageno,
+        showLoader: false,
+        isFromScroll: true);
   }
 
 
+  List<BottomBarModel> _allHistoryTypes() =>
+      [
+        BottomBarModel(text: AppString().today, value: '1'),
+        BottomBarModel(text: AppString().yesterday, value: '2'),
+        BottomBarModel(text: AppString().thisWeek, value: '3'),
+        BottomBarModel(text: AppString().thisMonth, value: '4'),
+        BottomBarModel(text: AppString().thisYear, value: '5'),
+        BottomBarModel(
+          text: AppString().customDate,
+          onTap: () async {
+            var dateRage = await DatePickerUi().dateRangePicker(
+                fromDate: DashboardFunction().fromDate,
+                toDate: DashboardFunction().endDate);
+            if (dateRage != null) {
+              DateFormat inputFormat =
+              DateFormat('dd-MMM-yyyy'); // Adjust the input format
 
-  List<BottomBarModel> _allHistoryTypes() => [
-    BottomBarModel(text: AppString().today, value: '1'),
-    BottomBarModel(text: AppString().yesterday, value: '2'),
-    BottomBarModel(text: AppString().thisWeek, value: '3'),
-    BottomBarModel(text: AppString().thisMonth, value: '4'),
-    BottomBarModel(text: AppString().thisYear, value: '5'),
-    BottomBarModel(
-      text: AppString().customDate,
-      onTap: () async {
-        var dateRage = await DatePickerUi().dateRangePicker(
-            fromDate: DashboardFunction().fromDate,
-            toDate: DashboardFunction().endDate);
-        if (dateRage != null) {
-          DateFormat inputFormat =
-          DateFormat('dd-MMM-yyyy'); // Adjust the input format
+              DateTime startDate = dateRage.start;
+              DateTime endDate = dateRage.end;
+              DashboardFunction().fromDate = dateRage.start;
+              DashboardFunction().endDate = dateRage.end;
+              String formattedStartDate =
+              DateFormat('dd-MMM-yyyy').format(startDate);
+              String formattedEndDate =
+              DateFormat('dd-MMM-yyyy').format(endDate);
+              selectedHistoryType.value.subTitle =
+              '$formattedStartDate to $formattedEndDate';
+              _fetchTransaction(fromDate: startDate, toDate: endDate);
+            } else {
+              selectedHistoryType(_allHistoryTypes()[0]);
+              _fetchTransaction();
+            }
+            selectedHistoryType.refresh();
+          },
+          value: '6',
+        ),
+      ];
 
-          DateTime startDate = dateRage.start;
-          DateTime endDate = dateRage.end;
-          DashboardFunction().fromDate = dateRage.start;
-          DashboardFunction().endDate = dateRage.end;
-          String formattedStartDate =
-          DateFormat('dd-MMM-yyyy').format(startDate);
-          String formattedEndDate =
-          DateFormat('dd-MMM-yyyy').format(endDate);
-          selectedHistoryType.value.subTitle =
-          '$formattedStartDate to $formattedEndDate';
-          _fetchTransaction(fromDate: startDate, toDate: endDate);
-        } else {
-          selectedHistoryType(_allHistoryTypes()[0]);
-          _fetchTransaction();
-        }
-        selectedHistoryType.refresh();
-      },
-      value: '6',
-    ),
-  ];
-
-  Future<void> _fetchTransaction(
-      {DateTime? fromDate,
-        DateTime? toDate,
-        int pageno = 0,
-        bool showLoader = true, bool isFromScroll=false}) async {
-    isFromScroll? isLoadingSales(true):null;
+  Future<void> _fetchTransaction({DateTime? fromDate,
+    DateTime? toDate,
+    int pageno = 0,
+    bool showLoader = true, bool isFromScroll = false}) async {
+    isFromScroll ? isLoadingSales(true) : null;
     isLoading(true);
     dynamic fromDateString, toDateString;
     if (fromDate != null) {
@@ -197,7 +203,6 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
         pageNo: pageno);
     isLoadingSales(false);
     isLoading(false);
-
   }
 
   @override
@@ -207,28 +212,29 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
       drawer: SideDrawer(),
       body: SafeArea(
           child: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  _header(),
-                  const SizedBox(height: 15),
-                  Expanded(child: _body()),
-                  const SizedBox(height: 20),
-                ],
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      _header(),
+                      const SizedBox(height: 15),
+                      Expanded(child: _body()),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          _bottomBar(),
-        ],
-      )),
+              _bottomBar(),
+            ],
+          )),
     );
   }
 
-  Widget _header() => Column(children: [
+  Widget _header() =>
+      Column(children: [
         Row(
           children: [
             Expanded(child: _profile()),
@@ -241,29 +247,32 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
         ),
         const SizedBox(height: 13),
         Obx(
-          () => Row(
-              children: List.generate(
-                  _topActions().length,
-                  (index) => Expanded(
-                      child: _topActions()[index].text == _topAction.value.text
-                          ? Buttons().raisedButton(
-                              padding: const EdgeInsets.all(0),
-                              textStyle: TextStyle(
-                                  color: AppColors.onPrimary,
-                                  fontWeight: FontWeight.w400),
-                              radius: 80,
-                              buttonText: _topActions()[index].text,
-                              onTap: () =>
-                                  _onTapTopAction(_topActions()[index]))
-                          : TextButton(
-                              onPressed: () =>
-                                  _onTapTopAction(_topActions()[index]),
-                              child: Text(
-                                _topActions()[index].text ?? '',
-                                style: TextStyle(
-                                    color: AppColors.onBg.withOpacity(0.5),
-                                    fontWeight: FontWeight.w300),
-                              ))))),
+              () =>
+              Row(
+                  children: List.generate(
+                      _topActions().length,
+                          (index) =>
+                          Expanded(
+                              child: _topActions()[index].text ==
+                                  _topAction.value.text
+                                  ? Buttons().raisedButton(
+                                  padding: const EdgeInsets.all(0),
+                                  textStyle: TextStyle(
+                                      color: AppColors.onPrimary,
+                                      fontWeight: FontWeight.w400),
+                                  radius: 80,
+                                  buttonText: _topActions()[index].text,
+                                  onTap: () =>
+                                      _onTapTopAction(_topActions()[index]))
+                                  : TextButton(
+                                  onPressed: () =>
+                                      _onTapTopAction(_topActions()[index]),
+                                  child: Text(
+                                    _topActions()[index].text ?? '',
+                                    style: TextStyle(
+                                        color: AppColors.onBg.withOpacity(0.5),
+                                        fontWeight: FontWeight.w300),
+                                  ))))),
         )
       ]);
 
@@ -274,112 +283,119 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
     _topAction(action);
   }
 
-  Widget _profile() => Obx(() => Row(
-    children: [
-      InkWell(
-        onTap: () {
-          _scaffoldKey.currentState?.openDrawer();
-        },
-        child: SizedBox(
-          width: 40.0,
-          // Adjust the width as needed to accommodate the outer circle
-          height: 40.0,
-          // Adjust the height as needed to accommodate the outer circle
-          child: Stack(
+  Widget _profile() =>
+      Obx(() =>
+          Row(
             children: [
-              Container(
-                height: 40,
-                width: 40,
-                child: ClipOval(
-                  child: FadeInImage(
-                    fit: BoxFit.cover,
-                    placeholder: const AssetImage(''),
-                    image: NetworkImage(
-                      OtpPageFunction()
-                          .loginData
-                          .value
-                          .data!
-                          .userProfile!
-                          .profileUrl ??
-                          '',
-                      headers: {
-                        'session-token': AppUtil.sessionToken.isNotEmpty
-                            ? AppUtil.sessionToken
-                            : '',
-                        'device-id': AppUtil.deviceId.isNotEmpty
-                            ? AppUtil.deviceId
-                            : '',
-                      },
+              InkWell(
+                onTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                child: SizedBox(
+                  width: 40.0,
+                  // Adjust the width as needed to accommodate the outer circle
+                  height: 40.0,
+                  // Adjust the height as needed to accommodate the outer circle
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 40,
+                        width: 40,
+                        child: ClipOval(
+                          child: FadeInImage(
+                            fit: BoxFit.cover,
+                            placeholder: const AssetImage(''),
+                            image: NetworkImage(
+                              OtpPageFunction()
+                                  .loginData
+                                  .value
+                                  .data!
+                                  .userProfile!
+                                  .profileUrl ??
+                                  '',
+                              headers: {
+                                'session-token': AppUtil.sessionToken.isNotEmpty
+                                    ? AppUtil.sessionToken
+                                    : '',
+                                'device-id': AppUtil.deviceId.isNotEmpty
+                                    ? AppUtil.deviceId
+                                    : '',
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary,
+                            // Pink color for the outer circle
+                            width:
+                            1.0, // Adjust the width of the outer circle as needed
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DashboardFunction().dashBoardInfo.value.data!
+                          .merchantName ?? '',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onBg,
+                          fontWeight: FontWeight.bold),
+                      maxLines: 1,
                     ),
-                  ),
+                    const SizedBox(height: 1),
+                    Text(
+                      DashboardFunction().dashBoardInfo.value.data!
+                          .storeLocation ??
+                          '',
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.onBg,
+                          fontWeight: FontWeight.w300),
+                      maxLines: 2,
+                    ),
+                  ],
                 ),
-              ),
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary,
-                    // Pink color for the outer circle
-                    width:
-                    1.0, // Adjust the width of the outer circle as needed
-                  ),
-                ),
-              ),
+              )
             ],
-          ),
-        ),
-      ),
-      const SizedBox(width: 5),
-      Flexible(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              DashboardFunction().dashBoardInfo.value.data!.merchantName ?? '',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.onBg,
-                  fontWeight: FontWeight.bold),
-              maxLines: 1,
-            ),
-            const SizedBox(height: 1),
-            Text(
-              DashboardFunction().dashBoardInfo.value.data!.storeLocation ??
-                  '',
-              style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.onBg,
-                  fontWeight: FontWeight.w300),
-              maxLines: 2,
-            ),
-          ],
-        ),
-      )
-    ],
-  ));
+          ));
 
-  Widget _body() => Obx(() => Card(
-      color: AppColors.card,
-      shape: Shapes().cardRoundedBorder(allRadius: 35),
-      margin: const EdgeInsets.all(0),
-      child: Column(
-        children: [
-          const SizedBox(height: 10),
-          _bodyHeader(),
-          Divider(color: AppColors.primary),
-          const SizedBox(height: 10),
-          Expanded(
-              child: DashboardFunction().transactionList.isEmpty &&
-                  !DashboardFunction().isinitLoading.value
-                  ? Center(child: Text(AppString().noSales))
-                  : _sales()),
-        ],
-      )));
+  Widget _body() =>
+      Obx(() =>
+          Card(
+              color: AppColors.card,
+              shape: Shapes().cardRoundedBorder(allRadius: 35),
+              margin: const EdgeInsets.all(0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  _bodyHeader(),
+                  Divider(color: AppColors.primary),
+                  Expanded(
+                      child: DashboardFunction().merchantTransactionList
+                          .isEmpty &&
+                          !DashboardFunction().isinitLoading.value
+                          ? Center(child: Text(AppString().noSales))
+                          : _sales()),
+                ],
+              )));
 
 
-  Widget _bodyHeader() => Padding(
+  Widget _bodyHeader() =>
+      Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -390,31 +406,34 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                     height: 30,
                     padding: const EdgeInsets.only(bottom: 5),
                     alignment: Alignment.center,
-                    child:Obx(() =>  Text( selectedHistoryType.value.value == '6'
-                        ? selectedHistoryType.value.subTitle ?? ''
-                        : selectedHistoryType.value.text ?? ''))),
-                Obx(() => Visibility(
+                    child: Obx(() =>
+                        Text(selectedHistoryType.value.value == '6'
+                            ? selectedHistoryType.value.subTitle ?? ''
+                            : selectedHistoryType.value.text ?? ''))),
+                Obx(() =>
+                    Visibility(
                       visible: !(_topAction.value.hideDuration ?? true),
                       child: Positioned(
-                        right: 0,
-                        child: Buttons().durationBtn(
-                          offset: const Offset(80, 40),
-                          data: _allHistoryTypes(),
-                          onSelected: (history) {
-                            if (history.value != DashboardFunction().tempHistoryType) {
-                              selectedHistoryType(history);
-                              scrollController.animateTo(
-                                0.0,
-                                duration: const Duration(milliseconds: 100),
-                                curve: Curves.linear,
-                              );
-                            }
-                            if (selectedHistoryType.value.value != '6' &&
-                                selectedHistoryType.value.value !=
+                          right: 0,
+                          child: Buttons().durationBtn(
+                              offset: const Offset(80, 40),
+                              data: _allHistoryTypes(),
+                              onSelected: (history) {
+                                if (history.value !=
                                     DashboardFunction().tempHistoryType) {
-                              _fetchTransaction();
-                            }
-                          })
+                                  selectedHistoryType(history);
+                                  scrollController.animateTo(
+                                    0.0,
+                                    duration: const Duration(milliseconds: 100),
+                                    curve: Curves.linear,
+                                  );
+                                }
+                                if (selectedHistoryType.value.value != '6' &&
+                                    selectedHistoryType.value.value !=
+                                        DashboardFunction().tempHistoryType) {
+                                  _fetchTransaction();
+                                }
+                              })
                       ),
                     )),
               ],
@@ -427,12 +446,14 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                       children: [
                         _titleText(AppString().noOfSales),
                         const SizedBox(height: 4),
-                        Obx(() => Text(
-                            DashboardFunction().salesData.value.txnCount.toString(),
-                            style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22))),
+                        Obx(() =>
+                            Text(
+                                DashboardFunction().salesData.value.txnCount
+                                    .toString(),
+                                style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22))),
                       ],
                     )),
                 Expanded(
@@ -440,12 +461,16 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                       children: [
                         _titleText(AppString().totalAmount),
                         const SizedBox(height: 4),
-                        Obx(() => Text(
-                            '${AppUtil.currency}${CommonFunctions().convertToDouble(value: DashboardFunction().salesData.value.total)}',
-                            style: TextStyle(
-                                color: Colors.yellow.shade200,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22))),
+                        Obx(() =>
+                            Text(
+                                '${AppUtil.currency}${CommonFunctions()
+                                    .convertToDouble(
+                                    value: DashboardFunction().salesData.value
+                                        .total)}',
+                                style: TextStyle(
+                                    color: Colors.yellow.shade200,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22))),
                       ],
                     ))
               ],
@@ -454,83 +479,172 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
         ),
       );
 
-  Widget _titleText(String text) => Text(text,
-      style: TextStyle(
-          color: AppColors.onBg.withOpacity(0.6), fontWeight: FontWeight.w300));
+  Widget _titleText(String text) =>
+      Text(text,
+          style: TextStyle(
+              color: AppColors.onBg.withOpacity(0.6),
+              fontWeight: FontWeight.w300));
 
 
-  Widget _sales() => Column(
-    children: [
-      Visibility(
-          visible: !DashboardFunction().isinitLoading.value,
-          child: _tableRows(data: _tableHeader)),
-      const SizedBox(height: 5),
-      Obx(() => Expanded(
-        child: ListView.separated(
-          controller: scrollController,
-          padding: const EdgeInsets.only(top: 25),
-          itemCount: DashboardFunction().transactionList.length,
-          itemBuilder: (context, index) => InkWell(
-            onTap: () => Get.to(TransactionDetailsPage(
-              tranDetail: DashboardFunction().transactionList[index],
-            )),
-            child: _tableRows(data: [
-              TableModel(
-                  text: CommonFunctions().formatTime(DashboardFunction()
-                      .transactionList![index]
-                      .date!),
-                  style: _tableBodyStyle),
-              TableModel(
-                  text:
-                  '${AppUtil.currency}${CommonFunctions().convertToDouble(value: DashboardFunction().transactionList![index].amount)}',
-                  style: _tableBodyStyle),
-              TableModel(
-                  text: DashboardFunction()
-                      .transactionList![index]
-                      .customerName,
-                  style: _tableBodyStyle),
-              TableModel(
-                text: AppString.getStatus(
-                    status: DashboardFunction()
-                        .transactionList![index]
-                        .transactionStatus),
-                style: _tableBodyStyle.copyWith(
-                  color: AppColors.getStatusColor(
-                      status: DashboardFunction()
-                          .transactionList![index]
-                          .transactionStatus),
+  Widget _sales() =>
+      Column(
+        children: [
+
+          Obx(() =>
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  itemCount: DashboardFunction().merchantTransactionList.length,
+                  itemBuilder: (context, index) {
+                    final transactionSummary =
+                    DashboardFunction().merchantTransactionList[index];
+
+                    return Theme(
+                      data: ThemeData().copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: const EdgeInsets.symmetric(horizontal: 10),  // Removes default padding
+                        backgroundColor: Colors.transparent,  // Removes background color
+                        collapsedBackgroundColor: Colors.transparent,
+                        iconColor: Colors.white,
+                        collapsedIconColor: Colors.white,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                transactionSummary.day!,
+                                maxLines: 1,
+                                style: _tableRows,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                transactionSummary.txnCount.toString(),
+                                style: _tableRows,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                '${AppUtil.currency}${CommonFunctions()
+                                    .convertToDouble(
+                                    value: transactionSummary.subtotal)}',
+                                style: _tableRows,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        ),
+                        children: [
+                          const Divider(color: Colors.grey,height: 0.3,),
+                          SizedBox(height: 5,),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: transactionSummary.txnSubList!.length,
+                            // List of transactions per day
+                            itemBuilder: (context, subIndex) {
+                              final transaction =
+                              transactionSummary.txnSubList![subIndex];
+                              return InkWell(
+                                onTap: (){
+                                  Get.to(TransactionDetailsPage(
+                                      tranDetail:transactionSummary.txnSubList![subIndex],
+                                  ));
+                                  },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          CommonFunctions().formatTime(
+                                              transaction.date!),
+                                          style: _tableBodyStyle,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '${AppUtil.currency}${CommonFunctions()
+                                              .convertToDouble(
+                                              value: transaction.amount!)}',
+                                          style: _tableBodyStyle,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          transaction.customerName!,
+                                          style: _tableBodyStyle,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.left,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          AppString.getStatus(
+                                              status: transaction
+                                                  .transactionStatus),
+                                          style: _tableBodyStyle.copyWith(
+                                            color: AppColors.getStatusColor(
+                                                status: transaction
+                                                    .transactionStatus),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  separatorBuilder: (BuildContext context, int index) =>
+                  const Divider(),
                 ),
-              ),
-            ]),
-          ),
-          separatorBuilder: (BuildContext context, int index) =>
-          const SizedBox(height: 30),
-        ),
-      )),
-      const SizedBox(height: 10),
-      Obx(() => isLoadingSales.value
-          ? Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: CircularProgressIndicator(color: AppColors.onBg),
-      )
-          : Container()),
-    ],
-  );
+              )),
+        ],
+      );
+
+
+
+
 
   final _tableBodyStyle =
-  TextStyle(color: AppColors.onBg, fontWeight: FontWeight.w300);
+  TextStyle(color: AppColors.onBg, fontWeight: FontWeight.w300,
+    overflow: TextOverflow.ellipsis,);
 
-  Widget _tableRows({required List<TableModel> data}) => Row(
-      children: List.generate(
-          data.length,
-              (index) => Expanded(
-              child: Text(
-                data[index].text ?? '',
-                style: data[index].style,
-                textAlign: data[index].textAlign ?? TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ))));
+  final _tableRows =
+  TextStyle(color: AppColors.onBg, fontWeight: FontWeight.bold,
+    overflow: TextOverflow.ellipsis,);
+
+
 
 
   Widget _bottomBar() => Card(

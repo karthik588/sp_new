@@ -40,6 +40,8 @@ class DashboardFunction {
   Rx<DynamicQrModel> dynamicQrStatus = DynamicQrModel().obs;
   RxList<TransactionListElement> transactionList =
       <TransactionListElement>[].obs;
+  RxList<TransactionsubList> merchantTransactionList =
+      <TransactionsubList>[].obs;
   int pageNumber = 0;
   ScreenshotController screenshotController = ScreenshotController();
 
@@ -411,15 +413,15 @@ class DashboardFunction {
             AppUtil.printData('data cleared ', isError: true);
             pageNumber = 0;
             salesData(FilterData());
-            transactionList.clear();
+            merchantTransactionList.clear();
           }
           salesData(response.data);
-          var transactionSet = transactionList.value.toSet();
+          var transactionSet = merchantTransactionList.value.toSet();
 
-          for (var transaction in response.data!.transactionList!) {
+          for (var transaction in response.data!.transactionsubList!) {
             transactionSet.add(transaction);
           }
-          transactionList.value = transactionSet.toList();
+          merchantTransactionList.value = transactionSet.toList();
           tempHistoryType = historyType ?? '0';
           tempsSelectedStatus = selectedStatus ?? '1';
           tempToDate = toDate;
