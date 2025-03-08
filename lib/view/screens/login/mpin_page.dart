@@ -52,20 +52,13 @@ class _MpinPageState extends State<MpinPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Get.to(const LoginPage());
-
-        return true;
-      },
-      child: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Column(children: [
-              _body(),
-            ]),
-          ),
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Column(children: [
+            _body(),
+          ]),
         ),
       ),
     );

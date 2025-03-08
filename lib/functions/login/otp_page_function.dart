@@ -185,10 +185,16 @@ class OtpPageFunction {
           AppUtil.sessionToken = loginData.value.data!.sessionToken!;
           await ApiServices().resetDio();
           updateUserConfig();
+        }
+        else if (response.errorData!.errorCode.toString() == '-121') {
+          Navigator.pop(Get.context!);
+          Get.off(const LoginPage());
         } else {
           ToastMessage().showToast(content: response.errorData!.errorMessage!);
           Navigator.pop(Get.context!);
+          Get.off(const LoginPage());
         }
+
       }
     } on DioException catch (_) {
       Navigator.pop(Get.context!);
@@ -315,7 +321,6 @@ class OtpPageFunction {
       Navigator.pop(Get.context!);
       if (response != null) {
         if (response.status == 0) {
-          MpinPageFunction().mpin.clear();
           Get.off(const RegistrationSuccessPage());
         }
       } else {

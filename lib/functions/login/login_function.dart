@@ -232,10 +232,11 @@ class LoginFunction {
       AppUtil.isMerchantUser = true;
       await ApiServices().resetDio();
       LoginFunction().fetchSecretKey(isFreshLogin: false);
-      Get.to(const MpinPage(
+      Get.offAll(const MpinPage(
         isLoginFlow: true,
         isChangeMpin: false,
       ));
+
     } else {
       if (loginToken != null) {
         await alreadyLoginFlow();
@@ -271,16 +272,21 @@ class LoginFunction {
         merchantDetails(response);
         if (merchantDetails.value.data!.isMobileExist == true &&
             merchantDetails.value.data!.isDeviceExist == false) {
-          Get.to(const MpinPage(
+          AppUtil.printData('user data 22222 exits new flow', isError: true);
+
+          Get.offAll(const MpinPage(
             isChangeMpin: false,
           ));
           fetchSecretKey(isFreshLogin: false);
         } else if (merchantDetails.value.data!.isMobileExist == true &&
             merchantDetails.value.data!.isDeviceExist == true) {
-          Get.to(const MpinPage(
-            isChangeMpin: false,
-            isLoginFlow: true,
-          ));
+          var otpEnc = await AESEncryptor.encrypt(MpinPageFunction().mpin.text) ?? '';
+          OtpPageFunction().login(
+              mobile: LoginFunction().mobileNumber.text.isEmpty
+                  ? LoginFunction().user.value.userMobile!
+                  : LoginFunction().mobileNumber.text,
+              password: otpEnc,
+              isNormalFlow: true);
         }
       }
     } on DioException catch (_) {
@@ -308,7 +314,6 @@ class LoginFunction {
           mobile: mobileNumber.text,
         ));
       } else {
-        MpinPageFunction().mpin.clear();
         ToastMessage().showToast(
           content: response!.errorData!.errorMessage,
         );

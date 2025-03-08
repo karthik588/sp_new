@@ -57,6 +57,9 @@ class DashboardFunction {
   final TextEditingController mobile = TextEditingController();
   final TextEditingController utrNo = TextEditingController();
 
+  DateTime fromDate = DateTime.now().add(const Duration(days: -30));
+  DateTime endDate = DateTime.now();
+
   Future<void> fetchAllNotifications() async {
     allNotificationList.clear();
     try {
@@ -73,6 +76,11 @@ class DashboardFunction {
       );
     }
   }
+
+  String? tempsSelectedStatus = '1';
+  String? tempHistoryType = '0';
+  String? tempFromDate = '';
+  String? tempToDate = '';
 
   Future<void> onRefresh({bool isOnRefresh = false}) async {
     try {
@@ -118,7 +126,9 @@ class DashboardFunction {
       String toDate = '',
       int pageNo = 0,
       bool isFromScroll = false,
-      bool isFromRefresh = false}) async {
+      bool isFromRefresh = false,
+        String? historyType = '1',
+      }) async {
     try {
       isFromScroll ? isSalesLoading(true) : null;
       isinitLoading(true);
@@ -130,7 +140,7 @@ class DashboardFunction {
       }
       final response = await ApiServices().filterTransactionHistory(
           toDate: toDate,
-          historyType: 1,
+          historyType: int.tryParse('$historyType') ?? 1,
           pageNumber: pageNo,
           recordsPerPage: 15,
           searchData: '',
@@ -146,6 +156,7 @@ class DashboardFunction {
       if (pageNumber == 0) {
         transactionList.clear();
       }
+
 
       if (response != null && response.status == 0) {
         salesData(response.data);
@@ -361,5 +372,75 @@ class DashboardFunction {
       duration: const Duration(milliseconds: 100),
       curve: Curves.linear,
     );
+  }
+
+  Future<FilterData?> filterSales(
+      {String? selectedStatus = '1',
+        bool isDownload = false,
+        String? fromDate = '',
+        String? historyType = '1',
+        int recordsPerPage = 15,
+        String? toDate = '',
+        int pageNo = 0,
+        bool showLoader = true}) async {
+    try {
+      //selectedStatus
+      //0:processing 1: success 2: failed
+      showLoader ? LoadingPrompt().show() : null;
+      final response = await ApiServices().filterTransactionHistory(
+          toDate: toDate ?? '',
+          historyType: int.tryParse('$historyType') ?? 1,
+          pageNumber: pageNo,
+          recordsPerPage: recordsPerPage,
+          searchData: '',
+          selectedStatus: selectedStatus != null && selectedStatus.isNotEmpty
+              ? selectedStatus
+              : '1',
+          sort: 0,
+          fromDate: fromDate ?? '',
+          terminalID: '0');
+
+      if (response != null && response.status == 0) {
+        if (isDownload) {
+          return response.data;
+        } else {
+          if (tempHistoryType != historyType ||
+              tempsSelectedStatus != selectedStatus ||
+              tempFromDate != fromDate ||
+              tempToDate != toDate) {
+            AppUtil.printData('data cleared ', isError: true);
+            pageNumber = 0;
+            salesData(FilterData());
+            transactionList.clear();
+          }
+          salesData(response.data);
+          var transactionSet = transactionList.value.toSet();
+
+          for (var transaction in response.data!.transactionList!) {
+            transactionSet.add(transaction);
+          }
+          transactionList.value = transactionSet.toList();
+          tempHistoryType = historyType ?? '0';
+          tempsSelectedStatus = selectedStatus ?? '1';
+          tempToDate = toDate;
+          tempFromDate = fromDate;
+        }
+      }
+    } on DioException catch (_) {
+      AppUtil.printData('error: $_', isError: true);
+    } finally {
+      salesData.refresh();
+      showLoader ? Navigator.pop(Get.context!) : null;
+    }
+    return null;
+  }
+
+  void clearFields() {
+    fromDate = DateTime.now().add(const Duration(days: -30));
+    endDate = DateTime.now();
+    pageNumber = 0;
+    salesData(FilterData());
+    transactionList.clear();
+    tempHistoryType = '0';
   }
 }

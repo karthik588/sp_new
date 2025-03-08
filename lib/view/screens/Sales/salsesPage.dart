@@ -142,11 +142,6 @@ class _SalesPageState extends State<SalesPage> {
         appBar: AppBar(
           centerTitle: false,
           title: Text(AppString().sales),
-          // actions: [
-          //   IconButton(
-          //       icon: Icon(Icons.download_rounded, color: AppColors.onBg),
-          //       onPressed: () => SalesFunction().downloadSales()),
-          // ],
         ),
         body: Card(
           color: AppColors.card,

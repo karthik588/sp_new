@@ -10,8 +10,13 @@ import 'package:swinpay/view/screens/dashboard/sideDrawer.dart';
 import 'package:swinpay/view/widgets/buttons.dart';
 import 'package:swinpay/view/widgets/shapes.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import '../../../functions/dashboard_function.dart';
+import '../../../functions/login/otp_page_function.dart';
+import '../../../models/backend/filterHistoryModel.dart';
 import '../../../models/uiModels.dart';
 import '../../widgets/datePicker.dart';
+import '../transactions/transaction_details.dart';
+import 'cash_mode_prompt.dart';
 
 class DashBoardPage2 extends StatefulWidget {
   const DashBoardPage2({Key? key}) : super(key: key);
@@ -24,13 +29,36 @@ class DashBoardPage2 extends StatefulWidget {
 
 class _DashBoardPage2State extends State<DashBoardPage2> {
   final Rx<BottomBarModel> _topAction = BottomBarModel().obs;
+  RxList<String> selectedFilterVal = <String>[].obs;
+  Rx<BottomBarModel> selectedHistoryType = BottomBarModel().obs;
+  final scrollController = ScrollController();
+  RxBool isLoading=false.obs;
+  RxBool isLoadingSales=false.obs;
 
   final _bottomData = [
     BottomBarModel(
-        icon: Icons.qr_code_scanner, onTap: () {}, text: AppString().qr),
+        icon: Icons.qr_code_scanner,
+        onTap: () {
+          DashboardFunction().amount.clear();
+          CashModePrompt().show(
+              controller: DashboardFunction().amount,
+              onTapContinue: () async {
+                Navigator.pop(Get.context!);
+                await DashboardFunction().getTerminalQr();
+              });
+        },
+        text: AppString().qr),
     BottomBarModel(
-        icon: Icons.credit_card_rounded,
-        onTap: () => MoreSheet().show(),
+        icon: Icons.payments,
+        onTap: () {
+          DashboardFunction().amount.clear();
+          CashModePrompt().show(
+              controller: DashboardFunction().amount,
+              onTapContinue: () async {
+                Navigator.pop(Get.context!);
+                await DashboardFunction().cash();
+              });
+        },
         text: AppString().cash),
     BottomBarModel(
         icon: Icons.add_circle,
@@ -40,11 +68,13 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
 
   _topActions() => [
         BottomBarModel(
-            icon: Icons.qr_code_scanner, onTap: () {}, text: AppString().sales),
+            icon: Icons.qr_code_scanner, onTap: () {},
+            body: _body(),
+            text: AppString().sales),
         BottomBarModel(
             icon: Icons.credit_card_rounded,
             onTap: () {},
-            body: _bodyTable(),
+            body: _body(),
             text: AppString().settlements),
         BottomBarModel(
             icon: Icons.add_circle,
@@ -66,9 +96,108 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      selectedFilterVal.clear();
       _topAction(_topActions()[0]);
+      DashboardFunction().clearFields();
+      DashboardFunction().getQRCodeInfo();
+      selectedHistoryType(_allHistoryTypes()[0]);
+      scrollController.addListener(() {
+        _scrollListner();
+      });
+      _fetchTransaction(pageno: 0, showLoader: true);
     });
-    super.initState();
+
+  }
+  void _scrollListner() {
+    if (scrollController.position.pixels ==
+        scrollController.position.maxScrollExtent) {
+      if (DashboardFunction().salesData.value.txnCount > 15 &&
+          DashboardFunction().transactionList.length !=
+              DashboardFunction().salesData.value.txnCount) {
+        DashboardFunction().pageNumber = DashboardFunction().pageNumber + 1;
+        selectedHistoryType.value.value == '6'
+            ? callDateApi(
+          pageno: DashboardFunction().pageNumber,
+        )
+            : _fetchTransaction(
+            pageno: DashboardFunction().pageNumber, showLoader: false,isFromScroll: true);
+
+      }
+    }
+  }
+  void callDateApi({required int pageno}) {
+    DateTime startDate = DashboardFunction().fromDate;
+    DateTime endDate = DashboardFunction().endDate;
+    _fetchTransaction(
+        fromDate: startDate, toDate: endDate, pageno: pageno, showLoader: false,isFromScroll: true);
+  }
+
+
+
+  List<BottomBarModel> _allHistoryTypes() => [
+    BottomBarModel(text: AppString().today, value: '1'),
+    BottomBarModel(text: AppString().yesterday, value: '2'),
+    BottomBarModel(text: AppString().thisWeek, value: '3'),
+    BottomBarModel(text: AppString().thisMonth, value: '4'),
+    BottomBarModel(text: AppString().thisYear, value: '5'),
+    BottomBarModel(
+      text: AppString().customDate,
+      onTap: () async {
+        var dateRage = await DatePickerUi().dateRangePicker(
+            fromDate: DashboardFunction().fromDate,
+            toDate: DashboardFunction().endDate);
+        if (dateRage != null) {
+          DateFormat inputFormat =
+          DateFormat('dd-MMM-yyyy'); // Adjust the input format
+
+          DateTime startDate = dateRage.start;
+          DateTime endDate = dateRage.end;
+          DashboardFunction().fromDate = dateRage.start;
+          DashboardFunction().endDate = dateRage.end;
+          String formattedStartDate =
+          DateFormat('dd-MMM-yyyy').format(startDate);
+          String formattedEndDate =
+          DateFormat('dd-MMM-yyyy').format(endDate);
+          selectedHistoryType.value.subTitle =
+          '$formattedStartDate to $formattedEndDate';
+          _fetchTransaction(fromDate: startDate, toDate: endDate);
+        } else {
+          selectedHistoryType(_allHistoryTypes()[0]);
+          _fetchTransaction();
+        }
+        selectedHistoryType.refresh();
+      },
+      value: '6',
+    ),
+  ];
+
+  Future<void> _fetchTransaction(
+      {DateTime? fromDate,
+        DateTime? toDate,
+        int pageno = 0,
+        bool showLoader = true, bool isFromScroll=false}) async {
+    isFromScroll? isLoadingSales(true):null;
+    isLoading(true);
+    dynamic fromDateString, toDateString;
+    if (fromDate != null) {
+      fromDateString =
+      '${fromDate.year}-${fromDate.month}-${fromDate.day} 00:00:00';
+    }
+
+    if (toDate != null) {
+      toDateString = '${toDate.year}-${toDate.month}-${toDate.day} 23:59:59';
+    }
+
+    await DashboardFunction().filterSales(
+        showLoader: showLoader,
+        selectedStatus: selectedFilterVal.join(','),
+        historyType: selectedHistoryType.value.value,
+        fromDate: fromDateString,
+        toDate: toDateString,
+        pageNo: pageno);
+    isLoadingSales(false);
+    isLoading(false);
+
   }
 
   @override
@@ -145,54 +274,110 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
     _topAction(action);
   }
 
-  Widget _profile() => Row(
-        children: [
-          InkWell(
-              onTap: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
-              child: CircleAvatar(
-                backgroundColor: AppColors.onBg.withOpacity(0.1),
-                radius: 25,
-                backgroundImage: const AssetImage('assets/images/download.png'),
-              )),
-          const SizedBox(width: 8),
-          Flexible(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _profile() => Obx(() => Row(
+    children: [
+      InkWell(
+        onTap: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
+        child: SizedBox(
+          width: 40.0,
+          // Adjust the width as needed to accommodate the outer circle
+          height: 40.0,
+          // Adjust the height as needed to accommodate the outer circle
+          child: Stack(
             children: [
-              Text(
-                'Cafe Cofee Day',
-                style: TextStyle(
-                    color: AppColors.onBg, fontWeight: FontWeight.bold),
-                maxLines: 1,
+              Container(
+                height: 40,
+                width: 40,
+                child: ClipOval(
+                  child: FadeInImage(
+                    fit: BoxFit.cover,
+                    placeholder: const AssetImage(''),
+                    image: NetworkImage(
+                      OtpPageFunction()
+                          .loginData
+                          .value
+                          .data!
+                          .userProfile!
+                          .profileUrl ??
+                          '',
+                      headers: {
+                        'session-token': AppUtil.sessionToken.isNotEmpty
+                            ? AppUtil.sessionToken
+                            : '',
+                        'device-id': AppUtil.deviceId.isNotEmpty
+                            ? AppUtil.deviceId
+                            : '',
+                      },
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                'company registration address',
-                style: TextStyle(
-                    color: AppColors.onBg, fontWeight: FontWeight.w300),
-                maxLines: 1,
-              )
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary,
+                    // Pink color for the outer circle
+                    width:
+                    1.0, // Adjust the width of the outer circle as needed
+                  ),
+                ),
+              ),
             ],
-          ))
-        ],
-      );
+          ),
+        ),
+      ),
+      const SizedBox(width: 5),
+      Flexible(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DashboardFunction().dashBoardInfo.value.data!.merchantName ?? '',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.onBg,
+                  fontWeight: FontWeight.bold),
+              maxLines: 1,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              DashboardFunction().dashBoardInfo.value.data!.storeLocation ??
+                  '',
+              style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.onBg,
+                  fontWeight: FontWeight.w300),
+              maxLines: 2,
+            ),
+          ],
+        ),
+      )
+    ],
+  ));
 
-  Widget _body() => Card(
+  Widget _body() => Obx(() => Card(
       color: AppColors.card,
       shape: Shapes().cardRoundedBorder(allRadius: 35),
       margin: const EdgeInsets.all(0),
       child: Column(
         children: [
-          const SizedBox(height: 15),
+          const SizedBox(height: 10),
           _bodyHeader(),
-          const SizedBox(height: 5),
           Divider(color: AppColors.primary),
           const SizedBox(height: 10),
-          Obx(() => Expanded(child: _topAction.value.body ?? Container())),
+          Expanded(
+              child: DashboardFunction().transactionList.isEmpty &&
+                  !DashboardFunction().isinitLoading.value
+                  ? Center(child: Text(AppString().noSales))
+                  : _sales()),
         ],
-      ));
+      )));
+
 
   Widget _bodyHeader() => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -205,22 +390,31 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
                     height: 30,
                     padding: const EdgeInsets.only(bottom: 5),
                     alignment: Alignment.center,
-                    child: Text(AppString().today)),
+                    child:Obx(() =>  Text( selectedHistoryType.value.value == '6'
+                        ? selectedHistoryType.value.subTitle ?? ''
+                        : selectedHistoryType.value.text ?? ''))),
                 Obx(() => Visibility(
                       visible: !(_topAction.value.hideDuration ?? true),
                       child: Positioned(
                         right: 0,
-                        child: Buttons()
-                            .durationBtn(offset: const Offset(80, 40), data: [
-                          BottomBarModel(text: AppString().today),
-                          BottomBarModel(text: AppString().yesterday),
-                          BottomBarModel(text: AppString().thisWeek),
-                          BottomBarModel(text: AppString().thisMonth),
-                          BottomBarModel(text: AppString().thisYear),
-                          BottomBarModel(
-                              text: AppString().customDate,
-                              onTap: () => DatePickerUi().datePicker()),
-                        ]),
+                        child: Buttons().durationBtn(
+                          offset: const Offset(80, 40),
+                          data: _allHistoryTypes(),
+                          onSelected: (history) {
+                            if (history.value != DashboardFunction().tempHistoryType) {
+                              selectedHistoryType(history);
+                              scrollController.animateTo(
+                                0.0,
+                                duration: const Duration(milliseconds: 100),
+                                curve: Curves.linear,
+                              );
+                            }
+                            if (selectedHistoryType.value.value != '6' &&
+                                selectedHistoryType.value.value !=
+                                    DashboardFunction().tempHistoryType) {
+                              _fetchTransaction();
+                            }
+                          })
                       ),
                     )),
               ],
@@ -230,29 +424,30 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
               children: [
                 Expanded(
                     child: Column(
-                  children: [
-                    _titleText(AppString().noOfSales),
-                    const SizedBox(height: 4),
-                    Text('0',
-                        style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22)),
-                  ],
-                )),
+                      children: [
+                        _titleText(AppString().noOfSales),
+                        const SizedBox(height: 4),
+                        Obx(() => Text(
+                            DashboardFunction().salesData.value.txnCount.toString(),
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22))),
+                      ],
+                    )),
                 Expanded(
                     child: Column(
-                  children: [
-                    _titleText(AppString().totalAmount),
-                    const SizedBox(height: 4),
-                    Text(
-                        '${AppUtil.currency}${CommonFunctions().convertToDouble(value: '0')}',
-                        style: TextStyle(
-                            color: Colors.yellow.shade200,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22)),
-                  ],
-                ))
+                      children: [
+                        _titleText(AppString().totalAmount),
+                        const SizedBox(height: 4),
+                        Obx(() => Text(
+                            '${AppUtil.currency}${CommonFunctions().convertToDouble(value: DashboardFunction().salesData.value.total)}',
+                            style: TextStyle(
+                                color: Colors.yellow.shade200,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22))),
+                      ],
+                    ))
               ],
             )
           ],
@@ -263,46 +458,80 @@ class _DashBoardPage2State extends State<DashBoardPage2> {
       style: TextStyle(
           color: AppColors.onBg.withOpacity(0.6), fontWeight: FontWeight.w300));
 
-  Widget _bodyTable() => Column(
-        children: [
-          _tableRows(data: _tableHeader),
-          const SizedBox(height: 5),
-          Expanded(
-              child: ListView.separated(
-            padding: const EdgeInsets.only(top: 25),
-            itemCount: 2,
-            itemBuilder: (context, index) => _tableRows(data: [
-              TableModel(text: '04:12 pm', style: _tableBodyStyle),
+
+  Widget _sales() => Column(
+    children: [
+      Visibility(
+          visible: !DashboardFunction().isinitLoading.value,
+          child: _tableRows(data: _tableHeader)),
+      const SizedBox(height: 5),
+      Obx(() => Expanded(
+        child: ListView.separated(
+          controller: scrollController,
+          padding: const EdgeInsets.only(top: 25),
+          itemCount: DashboardFunction().transactionList.length,
+          itemBuilder: (context, index) => InkWell(
+            onTap: () => Get.to(TransactionDetailsPage(
+              tranDetail: DashboardFunction().transactionList[index],
+            )),
+            child: _tableRows(data: [
+              TableModel(
+                  text: CommonFunctions().formatTime(DashboardFunction()
+                      .transactionList![index]
+                      .date!),
+                  style: _tableBodyStyle),
               TableModel(
                   text:
-                      '${AppUtil.currency}${CommonFunctions().convertToDouble(value: '230')}',
+                  '${AppUtil.currency}${CommonFunctions().convertToDouble(value: DashboardFunction().transactionList![index].amount)}',
                   style: _tableBodyStyle),
-              TableModel(text: 'Yogish Shenoyshbfcisu', style: _tableBodyStyle),
               TableModel(
-                  text: 'Success',
-                  style: _tableBodyStyle.copyWith(
-                      color: Colors.green.withOpacity(0.7))),
+                  text: DashboardFunction()
+                      .transactionList![index]
+                      .customerName,
+                  style: _tableBodyStyle),
+              TableModel(
+                text: AppString.getStatus(
+                    status: DashboardFunction()
+                        .transactionList![index]
+                        .transactionStatus),
+                style: _tableBodyStyle.copyWith(
+                  color: AppColors.getStatusColor(
+                      status: DashboardFunction()
+                          .transactionList![index]
+                          .transactionStatus),
+                ),
+              ),
             ]),
-            separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(height: 30),
-          ))
-        ],
-      );
+          ),
+          separatorBuilder: (BuildContext context, int index) =>
+          const SizedBox(height: 30),
+        ),
+      )),
+      const SizedBox(height: 10),
+      Obx(() => isLoadingSales.value
+          ? Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: CircularProgressIndicator(color: AppColors.onBg),
+      )
+          : Container()),
+    ],
+  );
 
-  final _tableBodyStyle = TextStyle(
-      color: AppColors.onBg.withOpacity(0.7), fontWeight: FontWeight.w300);
+  final _tableBodyStyle =
+  TextStyle(color: AppColors.onBg, fontWeight: FontWeight.w300);
 
   Widget _tableRows({required List<TableModel> data}) => Row(
       children: List.generate(
           data.length,
-          (index) => Expanded(
-                  child: Text(
+              (index) => Expanded(
+              child: Text(
                 data[index].text ?? '',
                 style: data[index].style,
                 textAlign: data[index].textAlign ?? TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ))));
+
 
   Widget _bottomBar() => Card(
         margin: const EdgeInsets.all(0),
